@@ -1,4 +1,4 @@
-name: Deploy Flask App to EC2
+name: Deploy Flask to EC2
 
 on:
   push:
@@ -28,24 +28,20 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # Navegar al directorio del proyecto
+          # Move to the project directory
           cd ${{ secrets.TARGET_DIR }}
-
-          # Actualizar el código desde la rama principal
+          
+          # Pull the latest changes
           git pull origin main
-
-          # Activar el entorno virtual o crear uno si no existe
-          if [ ! -d "venv" ]; then
-            python3 -m venv venv
-          fi
+          
+          # Ensure Python dependencies are installed
+          python3 -m venv venv
           source venv/bin/activate
-
-          # Instalar dependencias desde requirements.txt
           pip install -r requirements.txt
-
-          # Cerrar procesos Flask anteriores si existen
-          pkill -f "flask run" || echo "No previous Flask processes running."
-
-          # Ejecutar la aplicación Flask en segundo plano
-          nohup flask run --host=0.0.0.0 --port=80 > flask_output.log 2>&1 &
+          
+          # Stop any running Flask application (if needed)
+          pkill -f "python.*main.py" || true
+          
+          # Run the Flask application in the background
+          nohup python main.py > output.log 2>&1 &
           echo "Flask application is running in the background."
