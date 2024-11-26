@@ -1,0 +1,51 @@
+name: Deploy Flask App to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v3
+
+    - name: Deploy to EC2
+      uses: easingthemes/ssh-deploy@main
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        REMOTE_HOST: ${{ secrets.HOST_DNS_IPV4 }}
+        REMOTE_USER: ${{ secrets.EC2_USER }}
+        TARGET: ${{ secrets.TARGET_DIR }}
+
+    - name: Executing remote ssh commands using ssh key
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST_DNS_IPV4 }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          # Navegar al directorio del proyecto
+          cd ${{ secrets.TARGET_DIR }}
+
+          # Actualizar el código desde la rama principal
+          git pull origin main
+
+          # Activar el entorno virtual o crear uno si no existe
+          if [ ! -d "venv" ]; then
+            python3 -m venv venv
+          fi
+          source venv/bin/activate
+
+          # Instalar dependencias desde requirements.txt
+          pip install -r requirements.txt
+
+          # Cerrar procesos Flask anteriores si existen
+          pkill -f "flask run" || echo "No previous Flask processes running."
+
+          # Ejecutar la aplicación Flask en segundo plano
+          nohup flask run --host=0.0.0.0 --port=80 > flask_output.log 2>&1 &
+          echo "Flask application is running in the background."
