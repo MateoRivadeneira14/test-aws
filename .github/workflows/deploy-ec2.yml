@@ -17,31 +17,34 @@ jobs:
       uses: easingthemes/ssh-deploy@main
       env:
         SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-        REMOTE_HOST: ${{ secrets.HOST_DNS_IPV4 }}
+        REMOTE_HOST: ${{ secrets.HOST_DNS }}
         REMOTE_USER: ${{ secrets.EC2_USER }}
         TARGET: ${{ secrets.TARGET_DIR }}
 
     - name: Executing remote ssh commands using ssh key
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.HOST_DNS_IPV4 }}
+        host: ${{ secrets.HOST_DNS }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # Move to the project directory
+
           cd ${{ secrets.TARGET_DIR }}
           
-          # Pull the latest changes
+   
           git pull origin main
           
-          # Ensure Python dependencies are installed
+     
           python3 -m venv venv
           source venv/bin/activate
+          
+    
           pip install -r requirements.txt
           
-          # Stop any running Flask application (if needed)
-          pkill -f "python.*main.py" || true
+
+          pkill -f "gunicorn.*" || true
           
-          # Run the Flask application in the background
-          nohup python main.py > output.log 2>&1 &
-          echo "Flask application is running in the background."
+
+          nohup gunicorn -w 3 -b 0.0.0.0:80 main:app > gunicorn.log 2>&1 &
+          
+          echo "Flask application is running on port 80."
