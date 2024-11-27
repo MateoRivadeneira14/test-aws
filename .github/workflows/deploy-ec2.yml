@@ -41,5 +41,9 @@ jobs:
           # Instala las dependencias del proyecto
           pip install -r requirements.txt
           
-          # Reinicia el servidor para aplicar los cambios (por ejemplo, usando gunicorn o cualquier otro servidor configurado)
+          # Reinicia la aplicación Flask usando Gunicorn
           sudo systemctl restart flask-app
+
+    - name: Restart Flask application (Gunicorn)
+      run: |
+        sudo systemctl restart test-aws
