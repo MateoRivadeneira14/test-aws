@@ -44,6 +44,3 @@ jobs:
           # Reinicia la aplicación Flask usando Gunicorn
           sudo systemctl restart test-aws.service
 
-    - name: Restart Flask application (Gunicorn)
-      run: |
-        sudo systemctl restart test-aws.service
