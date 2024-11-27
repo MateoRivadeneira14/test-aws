@@ -1,0 +1,45 @@
+name: Deploy Flask to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v3
+
+    - name: Deploy to EC2
+      uses: easingthemes/ssh-deploy@main
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        REMOTE_HOST: ${{ secrets.HOST_DNS2_IPV4 }}
+        REMOTE_USER: ${{ secrets.EC2_USER }}
+        TARGET: ${{ secrets.TARGET_DIR }}
+
+    - name: Execute remote SSH commands
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST_DNS2_IPV4 }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          # Navega al directorio donde se encuentra el proyecto
+          cd ${{ secrets.TARGET_DIR }}
+          
+          # Asegúrate de que tienes la última versión del código
+          git pull origin main
+          
+          # Configura y activa un entorno virtual
+          python3 -m venv venv
+          source venv/bin/activate
+          
+          # Instala las dependencias del proyecto
+          pip install -r requirements.txt
+          
+          # Reinicia la aplicación Flask usando Gunicorn
+          sudo systemctl restart test-aws.service
